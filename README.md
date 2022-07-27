@@ -14,7 +14,7 @@ pre-commit install -t pre-commit
 Then, add your supabase API key to your `.env`.
 
 ## Usage
-```
+```python
 from uuid import uuid4
 model = Model("614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/latent-diffusion-400m")
 response = model.predict({"Prompt": f"a sign that says '{uuid4().hex[:5]}'"})

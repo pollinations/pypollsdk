@@ -5,15 +5,23 @@ import requests
 from pypollsdk import Model
 
 
-def test_model():
+def single_request_is_successful(prompt):
+    """Return True if a single request is successful, otherwise fail"""
     model = Model(
         "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/latent-diffusion-400m"
     )
-    prompt = f"a sign that says '{uuid4().hex[:5]}'"
     response = model.predict({"Prompt": prompt})
     assert response["success"] is True
     assert response["output"] is not None
-    response = requests.get(
-        f"https://ipfs.pollinations.ai/ipfs/{response['output']}/input/Prompt"
+    out_cid = response["output"].strip()
+    output_prompt = requests.get(
+        f"https://ipfs.pollinations.ai/ipfs/{out_cid}/input/Prompt"
     )
-    assert prompt == response.json()
+    assert prompt == eval(output_prompt.text)
+    return True
+
+
+def test_model():
+    for _ in range(2):
+        prompt = f"a sign that says '{uuid4().hex[:20]}'"
+        assert single_request_is_successful(prompt)
