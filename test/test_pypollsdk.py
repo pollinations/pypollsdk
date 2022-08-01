@@ -25,3 +25,5 @@ def test_model():
     for _ in range(2):
         prompt = f"a sign that says '{uuid4().hex[:20]}'"
         assert single_request_is_successful(prompt)
+        # Do it again to check if cached results are returned
+        assert single_request_is_successful(prompt)

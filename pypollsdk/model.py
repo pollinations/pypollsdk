@@ -9,6 +9,7 @@ from realtime.connection import Socket
 
 from pypollsdk import constants
 from pypollsdk.constants import supabase, supabase_api_key, supabase_id
+from pypollsdk.ipfs_download import download_output
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.DEBUG)
 
@@ -87,16 +88,35 @@ def wait_for_response(cid):
         return response
 
 
+def fetch_outputs_and_return(pollen, output_dir):
+    if output_dir is not None:
+        os.makedirs(output_dir, exist_ok=True)
+        download_output(pollen["output"], output_dir)
+    return pollen
+
+
 class Model:
     """Wrapper for requests to the pollinations API"""
 
     def __init__(self, image):
         self.image = image
 
-    def predict(self, request):
+    def predict(self, request, output_dir=None):
         """Run a single prediction on the model"""
         cid = upload_request_to_ipfs(request)
+        try:
+            response = (
+                supabase.table(constants.db_name)
+                .select("*")
+                .eq("input", cid)
+                .execute()
+                .data
+            )
+            assert len(response) == 1
+            return fetch_outputs_and_return(response[0], output_dir)
+        except Exception as e:
+            print(e)
         payload = {"input": cid, "image": self.image}
         data = supabase.table(constants.db_name).insert(payload).execute()
         assert len(data.data) > 0, f"Failed to insert {cid} into db"
-        return wait_for_response(cid)
+        return fetch_outputs_and_return(wait_for_response(cid), output_dir)
