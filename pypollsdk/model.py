@@ -118,7 +118,7 @@ class Model:
                 logging.info(f"Waiting for response for {cid}")
                 response = wait_for_response(cid)
             return fetch_outputs_and_return(response[0], output_dir)
-        except APIError as e:
+        except (APIError, AssertionError) as e:
             print(e)
         payload = {"input": cid, "image": self.image}
         data = supabase.table(constants.db_name).insert(payload).execute()
