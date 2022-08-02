@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import time
 
+from postgrest.exceptions import APIError
 from realtime.connection import Socket
 
 from pypollsdk import constants
@@ -113,8 +114,11 @@ class Model:
                 .data
             )
             assert len(response) == 1
+            if response[0]["success"] is None:
+                logging.info(f"Waiting for response for {cid}")
+                response = wait_for_response(cid)
             return fetch_outputs_and_return(response[0], output_dir)
-        except Exception as e:
+        except APIError as e:
             print(e)
         payload = {"input": cid, "image": self.image}
         data = supabase.table(constants.db_name).insert(payload).execute()

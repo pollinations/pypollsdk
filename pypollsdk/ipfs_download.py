@@ -27,7 +27,11 @@ def download_dir(cid, target):
     ).json()["Objects"][0]["Links"]
     metadata = named_list_to_dict(object_list)
     for name, value in metadata.items():
-        resp = wget.download(
-            f"https://ipfs.pollinations.ai/ipfs/{value['Hash']}", f"{target}/{name}"
-        )
-        print(resp)
+        url = f"https://ipfs.pollinations.ai/ipfs/{value['Hash']}"
+        filename = f"{target}/{name}"
+        try:
+            wget.download(url, filename)
+        except ValueError:
+            r = requests.get(url, allow_redirects=True)
+            with open(filename, "wb") as f:
+                f.write(r.content)
