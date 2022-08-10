@@ -104,6 +104,15 @@ class Model:
 
     def predict(self, request, output_dir=None):
         """Run a single prediction on the model"""
+        data = self.predict_async(request)
+        cid = data["input"]
+        if data["success"] is None:
+            logging.info(f"Waiting for response for {cid}")
+            data = wait_for_response(cid)
+        return fetch_outputs_and_return(data, output_dir)
+
+    def predict_async(self, request):
+        request["model_image"] = self.image
         cid = upload_request_to_ipfs(request)
         try:
             response = (
@@ -114,13 +123,10 @@ class Model:
                 .data
             )
             assert len(response) == 1
-            if response[0]["success"] is None:
-                logging.info(f"Waiting for response for {cid}")
-                response = wait_for_response(cid)
-            return fetch_outputs_and_return(response[0], output_dir)
+            return response[0]
         except (APIError, AssertionError) as e:
             print(e)
         payload = {"input": cid, "image": self.image}
-        data = supabase.table(constants.db_name).insert(payload).execute()
-        assert len(data.data) > 0, f"Failed to insert {cid} into db"
-        return fetch_outputs_and_return(wait_for_response(cid), output_dir)
+        response = supabase.table(constants.db_name).insert(payload).execute().data
+        assert len(response) > 0, f"Failed to insert {cid} into db"
+        return response[0]
