@@ -10,12 +10,12 @@ load_dotenv()
 try:
     url: str = os.environ.get("SUPABASE_URL")
     supabase_api_key: str = os.environ.get("SUPABASE_API_KEY")
+    supabase_id: str = os.get("SUPABASE_ID")
     supabase: Client = create_client(url, supabase_api_key)
 except:  # noqa
     logging.error(
         "Could not connect to Supabase. This is required for the SDK to work."
     )
-supabase_id: str = os.environ["SUPABASE_ID"]
 db_name = "pollen"
 test_image = "no-gpu-test-image"
 
