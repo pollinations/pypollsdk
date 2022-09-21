@@ -16,6 +16,7 @@ except:  # noqa
     logging.error(
         "Could not connect to Supabase. This is required for the SDK to work."
     )
+    supabase = None
 db_name = "pollen"
 test_image = "no-gpu-test-image"
 
