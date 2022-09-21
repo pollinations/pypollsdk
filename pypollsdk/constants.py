@@ -13,7 +13,6 @@ try:
     supabase_id: str = os.environ.get("SUPABASE_ID")
     supabase: Client = create_client(url, supabase_api_key)
 except:  # noqa
-    breakpoint()
     logging.error(
         "Could not connect to Supabase. This is required for the SDK to work."
     )
