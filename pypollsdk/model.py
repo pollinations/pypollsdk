@@ -6,10 +6,9 @@ import tempfile
 import time
 
 from postgrest.exceptions import APIError
-from realtime.connection import Socket
 
 from pypollsdk import constants
-from pypollsdk.constants import supabase, supabase_api_key, supabase_id
+from pypollsdk.constants import supabase
 from pypollsdk.ipfs_download import download_output
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.DEBUG)
@@ -43,19 +42,20 @@ class BackgroundCommand:
 def upload_request_to_ipfs(request):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "input"))
-        with BackgroundCommand(
-            f"pollinate-cli.js --send --ipns --debounce 70 --path {tmpdir} > /tmp/cid"
-        ):
-            for key, value in request.items():
-                if os.path.exists(value):
-                    filename = value.split("/")[-1]
-                    target = os.path.join(tmpdir, "input", filename)
-                    shutil.copy(value, target)
-                    value = filename
+        for key, value in request.items():
+            if os.path.exists(value):
+                filename = value.split("/")[-1]
+                target = os.path.join(tmpdir, "input", filename)
+                shutil.copy(value, target)
+                value = filename
 
-                path = f"{tmpdir}/input/{key}"
-                with open(path, "w") as f:
-                    f.write(value)
+            path = f"{tmpdir}/input/{key}"
+            with open(path, "w") as f:
+                f.write(value)
+
+        os.system(
+            f"pollinate-cli.js --once --send --ipns --debounce 70 --path {tmpdir} > /tmp/cid"
+        )
         with open("/tmp/cid") as f:
             cid = f.read().strip().split("\n")[-1].strip()
 
@@ -67,26 +67,22 @@ class CloseSocket(Exception):
 
 
 def wait_for_response(cid):
-    url = f"wss://{supabase_id}.supabase.co/realtime/v1/websocket?apikey={supabase_api_key}&vsn=1.0.0"
-    s = Socket(url)
-    s.connect()
-    channel = s.set_channel(f"realtime:public:{constants.db_name}")
-    response = {}
-
-    def unsubscribe_and_process(payload):
-        if (
-            payload["record"]["input"] == cid
-            and payload["record"]["success"] is not None
-        ):
-            response.update(payload["record"])
-            channel.off("UPDATE")
-            raise CloseSocket
-
-    channel.join().on("UPDATE", unsubscribe_and_process)
-    try:
-        s.listen()
-    except CloseSocket:
-        return response
+    # poll until success is not null
+    while True:
+        try:
+            pollen = (
+                supabase.table(constants.db_name)
+                .select("*")
+                .eq("input", cid)
+                .single()
+                .execute()
+                .data
+            )
+            if pollen["success"] is not None:
+                return pollen
+        except APIError:
+            pass
+        time.sleep(1)
 
 
 def fetch_outputs_and_return(pollen, output_dir):
@@ -126,7 +122,7 @@ class Model:
             return response[0]
         except (APIError, AssertionError) as e:
             print(e)
-        payload = {"input": cid, "image": self.image}
+        payload = {"input": cid, "image": self.image, "priority": 5}
         response = supabase.table(constants.db_name).insert(payload).execute().data
         assert len(response) > 0, f"Failed to insert {cid} into db"
         return response[0]

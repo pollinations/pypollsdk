@@ -27,3 +27,7 @@ def test_model():
         assert single_request_is_successful(prompt)
         # Do it again to check if cached results are returned
         assert single_request_is_successful(prompt)
+
+
+if __name__ == "__main__":
+    test_model()

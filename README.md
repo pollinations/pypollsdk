@@ -6,10 +6,6 @@ SDK for the pollinations API.
 ```sh
 # Install dependencies
 pip install -e ".[test]"
-
-# Install pre-commit hooks
-brew install pre-commit
-pre-commit install -t pre-commit
 ```
 Then, add your supabase API key to your `.env`.
 

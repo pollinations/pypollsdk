@@ -9,7 +9,7 @@ url: str = os.environ.get("SUPABASE_URL")
 supabase_api_key: str = os.environ.get("SUPABASE_API_KEY")
 supabase: Client = create_client(url, supabase_api_key)
 supabase_id: str = os.environ["SUPABASE_ID"]
-db_name = "pollen_dev"
+db_name = "pollen"
 test_image = "no-gpu-test-image"
 
 
@@ -19,6 +19,4 @@ model_index = (
 
 
 def available_models():
-    return list(requests.get(model_index).json().values()) + [
-        "no-gpu-test-image"
-    ]  # TODO .keys()
+    return list(requests.get(model_index).json().values()) + ["no-gpu-test-image"]
