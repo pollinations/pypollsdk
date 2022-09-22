@@ -15,7 +15,7 @@ def single_request_is_successful(prompt):
     assert response["output"] is not None
     out_cid = response["output"].strip()
     output_prompt = requests.get(
-        f"https://ipfs.pollinations.ai/ipfs/{out_cid}/input/Prompt"
+        f"https://ipfs.pollinations.ai/ipfs/{out_cid}/input/prompt"
     )
     assert prompt == eval(output_prompt.text)
     return True
