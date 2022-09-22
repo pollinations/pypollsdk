@@ -10,12 +10,12 @@ def single_request_is_successful(prompt):
     model = Model(
         "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/latent-diffusion-400m"
     )
-    response = model.predict({"Prompt": prompt})
+    response = model.predict({"prompt": prompt})
     assert response["success"] is True
     assert response["output"] is not None
     out_cid = response["output"].strip()
     output_prompt = requests.get(
-        f"https://ipfs.pollinations.ai/ipfs/{out_cid}/input/Prompt"
+        f"https://ipfs.pollinations.ai/ipfs/{out_cid}/input/prompt"
     )
     assert prompt == eval(output_prompt.text)
     return True
