@@ -100,29 +100,39 @@ class Model:
 
     def predict(self, request, output_dir=None):
         """Run a single prediction on the model"""
-        data = self.predict_async(request)
-        cid = data["input"]
-        if data["success"] is None:
-            logging.info(f"Waiting for response for {cid}")
-            data = wait_for_response(cid)
-        return fetch_outputs_and_return(data, output_dir)
+        return predict(self.image, request, output_dir)
 
     def predict_async(self, request):
-        request["model_image"] = self.image
-        cid = upload_request_to_ipfs(request)
-        try:
-            response = (
-                supabase.table(constants.db_name)
-                .select("*")
-                .eq("input", cid)
-                .execute()
-                .data
-            )
-            assert len(response) == 1
-            return response[0]
-        except (APIError, AssertionError) as e:
-            print(e)
-        payload = {"input": cid, "image": self.image, "priority": 5}
-        response = supabase.table(constants.db_name).insert(payload).execute().data
-        assert len(response) > 0, f"Failed to insert {cid} into db"
+        return predict_async(self.image, request)
+
+
+
+def predict(model_image, request, output_dir=None):
+    """Run a single prediction on the model"""
+    data = predict_async(model_image, request)
+    cid = data["input"]
+    if data["success"] is None:
+        logging.info(f"Waiting for response for {cid}")
+        data = wait_for_response(cid)
+    return fetch_outputs_and_return(data, output_dir)
+
+
+def predict_async(model_image, request):
+    request["model_image"] = model_image
+    cid = upload_request_to_ipfs(request)
+    try:
+        response = (
+            supabase.table(constants.db_name)
+            .select("*")
+            .eq("input", cid)
+            .execute()
+            .data
+        )
+        assert len(response) == 1
         return response[0]
+    except (APIError, AssertionError) as e:
+        print(e)
+    payload = {"input": cid, "image": model_image, "priority": 5}
+    response = supabase.table(constants.db_name).insert(payload).execute().data
+    assert len(response) > 0, f"Failed to insert {cid} into db"
+    return response[0]
