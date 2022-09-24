@@ -43,10 +43,11 @@ def upload_request_to_ipfs(request):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "input"))
         for key, value in request.items():
-            if os.path.exists(value):
-                filename = value.split("/")[-1]
+            str_value = str(value)
+            if os.path.exists(str_value):
+                filename = str_value.split("/")[-1]
                 target = os.path.join(tmpdir, "input", filename)
-                shutil.copy(value, target)
+                shutil.copy(str_value, target)
                 value = filename
 
             path = f"{tmpdir}/input/{key}"
