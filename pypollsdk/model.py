@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import shutil
@@ -60,7 +61,7 @@ def upload_request_to_ipfs(request, allowed_paths=[]):
 
             path = f"{tmpdir}/input/{key}"
             with open(path, "w") as f:
-                f.write(str_value)
+                f.write(json.dumps(value))
 
         os.system(
             f"pollinate-cli.js --once --send --ipns --debounce 70 --path {tmpdir} > /tmp/cid"
