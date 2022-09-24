@@ -39,20 +39,28 @@ class BackgroundCommand:
             pass
 
 
-def upload_request_to_ipfs(request):
+def upload_request_to_ipfs(request, allowed_paths=[]):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "input"))
         for key, value in request.items():
             str_value = str(value)
             if os.path.exists(str_value):
-                filename = str_value.split("/")[-1]
-                target = os.path.join(tmpdir, "input", filename)
-                shutil.copy(str_value, target)
-                value = filename
+                # check if the referenced paths is in one of the paths from which we allow uploads
+                if any(
+                    [
+                        os.path.commonpath([os.path.abspath(str_value), allowed_path])
+                        == allowed_path
+                        for allowed_path in allowed_paths
+                    ]
+                ):
+                    filename = str_value.split("/")[-1]
+                    target = os.path.join(tmpdir, "input", filename)
+                    shutil.copy(str_value, target)
+                    value = filename
 
             path = f"{tmpdir}/input/{key}"
             with open(path, "w") as f:
-                f.write(value)
+                f.write(str_value)
 
         os.system(
             f"pollinate-cli.js --once --send --ipns --debounce 70 --path {tmpdir} > /tmp/cid"
@@ -96,8 +104,9 @@ def fetch_outputs_and_return(pollen, output_dir):
 class Model:
     """Wrapper for requests to the pollinations API"""
 
-    def __init__(self, image):
+    def __init__(self, image, allowed_paths=["/tmp", "/outputs", "."]):
         self.image = image
+        self.allowed_paths = [os.path.abspath(i) for i in allowed_paths]
 
     def predict(self, request, output_dir=None):
         """Run a single prediction on the model"""
@@ -110,7 +119,8 @@ class Model:
 
     def predict_async(self, request):
         request["model_image"] = self.image
-        cid = upload_request_to_ipfs(request)
+        cid = upload_request_to_ipfs(request, self.allowed_paths)
+        print(f"Request sent with cid: {cid}")
         try:
             response = (
                 supabase.table(constants.db_name)
@@ -123,7 +133,11 @@ class Model:
             return response[0]
         except (APIError, AssertionError) as e:
             print(e)
-        payload = {"input": cid, "image": self.image, "priority": 5}
+        payload = {
+            "input": cid,
+            "image": self.image,
+            "priority": request.get("priority", 0),
+        }
         response = supabase.table(constants.db_name).insert(payload).execute().data
         assert len(response) > 0, f"Failed to insert {cid} into db"
         return response[0]
