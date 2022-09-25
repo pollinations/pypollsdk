@@ -2,40 +2,14 @@ import json
 import logging
 import os
 import shutil
-import subprocess
 import tempfile
-import time
 
 from postgrest.exceptions import APIError
 
 from pypollsdk import constants
 from pypollsdk.constants import supabase
-from pypollsdk.ipfs_download import download_output
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.DEBUG)
-
-
-class BackgroundCommand:
-    def __init__(self, cmd):
-        self.cmd = cmd
-
-    def __enter__(self):
-        self.proc = subprocess.Popen(
-            f"exec {self.cmd}",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        return self.proc
-
-    def __exit__(self, type, value, traceback):
-        time.sleep(15)
-        logging.info(f"Killing background command: {self.cmd}")
-        self.proc.kill()
-        try:
-            logs, errors = self.proc.communicate(timeout=2)
-        except subprocess.TimeoutExpired:
-            pass
 
 
 def upload_request_to_ipfs(request, allowed_paths=[]):
@@ -76,38 +50,9 @@ class CloseSocket(Exception):
 
 def wait_and_sync(cid, output_dir=None):
     # poll until success is not null
-    downloaded = []
-    if output_dir is not None:
-        os.makedirs(output_dir, exist_ok=True)
-    previous_output_cid = None
-    output = {}
-    while True:
-        try:
-            pollen = (
-                supabase.table(constants.db_name)
-                .select("*")
-                .eq("input", cid)
-                .single()
-                .execute()
-                .data
-            )
-            if (
-                output_dir is not None
-                and pollen["output"] is not None
-                and pollen["output"] != previous_output_cid
-            ):
-                previous_output_cid = pollen["output"]
-                try:
-                    output, downloaded = download_output(
-                        pollen["output"], output_dir, downloaded=downloaded
-                    )
-                except Exception as e:
-                    logging.error(f"{e}")
-            if pollen["success"] is not None:
-                return pollen, output
-        except APIError:
-            pass
-        time.sleep(1)
+    os.system(
+        f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output"
+    )
 
 
 class Model:
