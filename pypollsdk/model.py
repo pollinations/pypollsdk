@@ -2,40 +2,14 @@ import json
 import logging
 import os
 import shutil
-import subprocess
 import tempfile
-import time
 
 from postgrest.exceptions import APIError
 
 from pypollsdk import constants
 from pypollsdk.constants import supabase
-from pypollsdk.ipfs_download import download_output
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.DEBUG)
-
-
-class BackgroundCommand:
-    def __init__(self, cmd):
-        self.cmd = cmd
-
-    def __enter__(self):
-        self.proc = subprocess.Popen(
-            f"exec {self.cmd}",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        return self.proc
-
-    def __exit__(self, type, value, traceback):
-        time.sleep(15)
-        logging.info(f"Killing background command: {self.cmd}")
-        self.proc.kill()
-        try:
-            logs, errors = self.proc.communicate(timeout=2)
-        except subprocess.TimeoutExpired:
-            pass
 
 
 def upload_request_to_ipfs(request, allowed_paths=[]):
@@ -76,7 +50,9 @@ class CloseSocket(Exception):
 
 def wait_and_sync(cid, output_dir=None):
     # poll until success is not null
-    os.system(f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output")
+    os.system(
+        f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output"
+    )
 
 
 class Model:
