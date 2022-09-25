@@ -4,10 +4,13 @@ import json
 import logging
 import os
 import subprocess
-import sys
 from typing import Any, Dict, Union
 
 import requests
+
+
+class IPFSException(Exception):
+    pass
 
 
 def ipfs_dir_to_json(cid: str):
@@ -25,10 +28,15 @@ def ipfs_dir_to_json(cid: str):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    stdout, stderr = proc.communicate()
+    # give timeout of 10 seconds
+    try:
+        stdout, stderr = proc.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        stdout, stderr = proc.communicate()
     if proc.returncode != 0:
         logging.error(f"Error while fetching IPFS dir {cid}: {stderr}")
-        sys.exit(1)
+        raise IPFSException(f"Error while fetching IPFS dir {cid}: {stderr}")
 
     # parse stdout to json
     json_str = stdout.decode("utf-8")
@@ -75,7 +83,7 @@ def download_files_recursive(
         try_download_file(maybe_files, target)
         return downloaded + [maybe_files]
     elif isinstance(maybe_files, list):
-        for i, item in maybe_files:
+        for i, item in enumerate(maybe_files):
             downloaded += download_files_recursive(
                 item, os.path.join(target, str(i)), downloaded
             )

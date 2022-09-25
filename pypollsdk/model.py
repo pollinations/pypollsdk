@@ -34,8 +34,6 @@ class BackgroundCommand:
         self.proc.kill()
         try:
             logs, errors = self.proc.communicate(timeout=2)
-            logging.info(f"   Logs: {logs.decode('utf-8')}")
-            logging.error(f"   errors: {errors.decode('utf-8')}")
         except subprocess.TimeoutExpired:
             pass
 
@@ -81,6 +79,8 @@ def wait_and_sync(cid, output_dir=None):
     downloaded = []
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
+    previous_output_cid = None
+    output = {}
     while True:
         try:
             pollen = (
@@ -91,12 +91,20 @@ def wait_and_sync(cid, output_dir=None):
                 .execute()
                 .data
             )
-            if output_dir is not None and pollen["output"] is not None:
-                output, downloaded = download_output(
-                    pollen["output"], output_dir, downloaded=downloaded
-                )
+            if (
+                output_dir is not None
+                and pollen["output"] is not None
+                and pollen["output"] != previous_output_cid
+            ):
+                previous_output_cid = pollen["output"]
+                try:
+                    output, downloaded = download_output(
+                        pollen["output"], output_dir, downloaded=downloaded
+                    )
+                except Exception as e:
+                    logging.error(f"{e}")
             if pollen["success"] is not None:
-                return pollen
+                return pollen, output
         except APIError:
             pass
         time.sleep(1)
@@ -114,8 +122,12 @@ class Model:
         data = self.predict_async(request)
         cid = data["input"]
         logging.info(f"Waiting for response for {cid}")
-        data = wait_and_sync(cid, output_dir)
-        return data
+        pollen, output = wait_and_sync(cid, output_dir)
+        pollen["output_json"] = output
+        if output_dir is not None:
+            with open(os.path.join(output_dir, "output.json"), "w") as f:
+                f.write(json.dumps(pollen))
+        return pollen
 
     def predict_async(self, request):
         request["model_image"] = self.image
