@@ -8,13 +8,7 @@ setup(
     packages=find_packages(),
     package_data={},
     scripts=[],
-    install_requires=[
-        "supabase",
-        "python-dotenv",
-        "pytest",
-        "wget",
-        "timeout-decorator",
-    ],
+    install_requires=["supabase", "python-dotenv", "pytest", "wget"],
     extras_require={
         "test": ["pytest", "pylint!=2.5.0", "black", "mypy", "flake8", "pytest-cov"],
     },

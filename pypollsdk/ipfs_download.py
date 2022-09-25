@@ -8,10 +8,8 @@ import sys
 from typing import Any, Dict, Union
 
 import requests
-import timeout_decorator
 
 
-@timeout_decorator.timeout(20)
 def ipfs_dir_to_json(cid: str):
     """Get a CID of a dir in IPFS and return a dict. Runs "node /usr/local/bin/getcid-cli.js [cid]
     with {filename: filecontent} structure, where
