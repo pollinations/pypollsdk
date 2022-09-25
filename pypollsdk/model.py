@@ -76,38 +76,7 @@ class CloseSocket(Exception):
 
 def wait_and_sync(cid, output_dir=None):
     # poll until success is not null
-    downloaded = []
-    if output_dir is not None:
-        os.makedirs(output_dir, exist_ok=True)
-    previous_output_cid = None
-    output = {}
-    while True:
-        try:
-            pollen = (
-                supabase.table(constants.db_name)
-                .select("*")
-                .eq("input", cid)
-                .single()
-                .execute()
-                .data
-            )
-            if (
-                output_dir is not None
-                and pollen["output"] is not None
-                and pollen["output"] != previous_output_cid
-            ):
-                previous_output_cid = pollen["output"]
-                try:
-                    output, downloaded = download_output(
-                        pollen["output"], output_dir, downloaded=downloaded
-                    )
-                except Exception as e:
-                    logging.error(f"{e}")
-            if pollen["success"] is not None:
-                return pollen, output
-        except APIError:
-            pass
-        time.sleep(1)
+    os.system(f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output")
 
 
 class Model:
