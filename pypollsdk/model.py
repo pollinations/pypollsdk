@@ -51,7 +51,7 @@ class CloseSocket(Exception):
 def wait_and_sync(cid, output_dir=None):
     # poll until success is not null
     os.system(
-        f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output"
+        f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output --receive"
     )
 
 
