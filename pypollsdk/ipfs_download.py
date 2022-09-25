@@ -77,10 +77,12 @@ def download_files_recursive(
         return downloaded + [maybe_files]
     elif isinstance(maybe_files, list):
         for i, item in maybe_files:
-            return download_files_recursive(item, os.path.join(target, str(i)))
+            downloaded += download_files_recursive(item, os.path.join(target, str(i)))
+        return downloaded
     elif isinstance(maybe_files, dict):
         for key, value in maybe_files.items():
-            return download_files_recursive(value, os.path.join(target, key))
+            downloaded += download_files_recursive(value, os.path.join(target, key))
+        return downloaded
 
 
 def download_output(cid: str, output_dir: str, downloaded: list = None):
