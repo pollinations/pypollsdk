@@ -91,7 +91,7 @@ def wait_and_sync(cid, output_dir=None):
                 .execute()
                 .data
             )
-            if output_dir is not None:
+            if output_dir is not None and pollen["output"] is not None:
                 output, downloaded = download_output(
                     pollen["output"], output_dir, downloaded=downloaded
                 )
