@@ -50,6 +50,9 @@ class CloseSocket(Exception):
 
 def wait_and_sync(cid, output_dir=None):
     # poll until success is not null
+    print(
+        f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output --receive"
+    )
     os.system(
         f"pollinate-cli.js --nodeid {cid} --debounce 70 --path {output_dir} --subfolder /output --receive"
     )
@@ -62,7 +65,7 @@ class Model:
         self.image = image
         self.allowed_paths = [os.path.abspath(i) for i in allowed_paths]
 
-    def predict(self, request, output_dir=None):
+    def predict(self, request, output_dir):
         """Run a single prediction on the model"""
         data = self.predict_async(request)
         cid = data["input"]
