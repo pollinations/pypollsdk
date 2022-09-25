@@ -92,7 +92,7 @@ class Model:
         payload = {
             "input": cid,
             "image": self.image,
-            "priority": request.get("priority", 0),
+            "priority": response.get("priority", 1),
         }
         response = supabase.table(constants.db_name).insert(payload).execute().data
         assert len(response) > 0, f"Failed to insert {cid} into db"
