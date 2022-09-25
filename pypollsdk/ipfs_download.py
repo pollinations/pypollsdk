@@ -65,20 +65,28 @@ def try_download_file(url: str, target: str):
             logging.error(f"Error while downloading {url}: {e}")
 
 
-def download_files_recursive(maybe_files: Union[dict, list, str], target: str):
+def download_files_recursive(
+    maybe_files: Union[dict, list, str], target: str, downloaded: list = None
+):
+    if downloaded is None:
+        downloaded = []
+    if maybe_files in downloaded:
+        return downloaded
     if isinstance(maybe_files, str):
         try_download_file(maybe_files, target)
-        return
+        return downloaded + [maybe_files]
     elif isinstance(maybe_files, list):
         for i, item in maybe_files:
-            download_files_recursive(item, os.path.join(target, str(i)))
+            return download_files_recursive(item, os.path.join(target, str(i)))
     elif isinstance(maybe_files, dict):
         for key, value in maybe_files.items():
-            download_files_recursive(value, os.path.join(target, key))
+            return download_files_recursive(value, os.path.join(target, key))
 
 
-def download_output(cid: str, output_dir: str):
+def download_output(cid: str, output_dir: str, downloaded: list = None):
     """Download the output of a pollinate run to a local directory"""
     output = ipfs_dir_to_json(cid)["output"]
-    download_files_recursive(output, output_dir)
-    return output
+    if output is None:
+        return output, []
+    downloaded = download_files_recursive(output, output_dir, downloaded)
+    return output, downloaded

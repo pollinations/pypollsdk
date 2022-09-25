@@ -76,8 +76,11 @@ class CloseSocket(Exception):
     pass
 
 
-def wait_for_response(cid):
+def wait_and_sync(cid, output_dir=None):
     # poll until success is not null
+    downloaded = []
+    if output_dir is not None:
+        os.makedirs(output_dir, exist_ok=True)
     while True:
         try:
             pollen = (
@@ -88,18 +91,15 @@ def wait_for_response(cid):
                 .execute()
                 .data
             )
+            if output_dir is not None:
+                output, downloaded = download_output(
+                    pollen["output"], output_dir, downloaded=downloaded
+                )
             if pollen["success"] is not None:
                 return pollen
         except APIError:
             pass
         time.sleep(1)
-
-
-def fetch_outputs_and_return(pollen, output_dir):
-    if output_dir is not None:
-        os.makedirs(output_dir, exist_ok=True)
-        download_output(pollen["output"], output_dir)
-    return pollen
 
 
 class Model:
@@ -113,10 +113,9 @@ class Model:
         """Run a single prediction on the model"""
         data = self.predict_async(request)
         cid = data["input"]
-        if data["success"] is None:
-            logging.info(f"Waiting for response for {cid}")
-            data = wait_for_response(cid)
-        return fetch_outputs_and_return(data, output_dir)
+        logging.info(f"Waiting for response for {cid}")
+        data = wait_and_sync(cid, output_dir)
+        return data
 
     def predict_async(self, request):
         request["model_image"] = self.image
