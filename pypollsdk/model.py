@@ -67,12 +67,8 @@ class Model:
         data = self.predict_async(request)
         cid = data["input"]
         logging.info(f"Waiting for response for {cid}")
-        pollen, output = wait_and_sync(cid, output_dir)
-        pollen["output_json"] = output
-        if output_dir is not None:
-            with open(os.path.join(output_dir, "output.json"), "w") as f:
-                f.write(json.dumps(pollen))
-        return pollen
+        wait_and_sync(cid, output_dir)
+        return
 
     def predict_async(self, request):
         request["model_image"] = self.image
