@@ -1,37 +1,86 @@
+#!/usr/bin/env python
+# coding: utf-8
+import json
+import logging
 import os
+import subprocess
+import sys
+from typing import Any, Dict, Union
 
 import requests
-import wget
+import timeout_decorator
 
 
-def first_true(iterable, default=None, pred=None):
-    return next(filter(pred, iterable), default)
+@timeout_decorator.timeout(20)
+def ipfs_dir_to_json(cid: str):
+    """Get a CID of a dir in IPFS and return a dict. Runs "node /usr/local/bin/getcid-cli.js [cid]
+    with {filename: filecontent} structure, where
+        - files with file extension are skipped
+        - filecontents containing a filename are resolved to absolute URIs
+    """
+    logging.info(f"Fetching IPFS dir {cid}")
+
+    # use subprocess to run getcid-cli.js
+
+    proc = subprocess.Popen(
+        ["node", "/usr/local/bin/getcid-cli.js", cid],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        logging.error(f"Error while fetching IPFS dir {cid}: {stderr}")
+        sys.exit(1)
+
+    # parse stdout to json
+    json_str = stdout.decode("utf-8")
+    print(json_str)
+    json_dict = json.loads(json_str)
+
+    return json_dict
 
 
-def named_list_to_dict(object_list):
-    return {i["Name"]: i for i in object_list}
+def ipfs_subfolder_to_json(cid: str, subdir: str) -> Dict[str, Any]:
+    """Get the contents of a subdir of a cid as json"""
+    json_dict = ipfs_dir_to_json(cid)
+    return json_dict[subdir]
 
 
-def download_output(cid, target):
-    object_list = requests.get(
-        f"https://ipfs.pollinations.ai/api/v0/ls?arg={cid}"
-    ).json()["Objects"][0]["Links"]
-    metadata = named_list_to_dict(object_list)
-    return download_dir(metadata["output"]["Hash"], target)
+def is_downloadable(url: str) -> bool:
+    """Check if a url is downloadable"""
+    if url.startswith("http"):
+        return True
+    return False
 
 
-def download_dir(cid, target):
-    os.makedirs(target, exist_ok=True)
-    object_list = requests.get(
-        f"https://ipfs.pollinations.ai/api/v0/ls?arg={cid}"
-    ).json()["Objects"][0]["Links"]
-    metadata = named_list_to_dict(object_list)
-    for name, value in metadata.items():
-        url = f"https://ipfs.pollinations.ai/ipfs/{value['Hash']}"
-        filename = f"{target}/{name}"
+def try_download_file(url: str, target: str):
+    """Download a file to a local directory"""
+    logging.info(f"Downloading {url} to {target}")
+    if url.startswith("http"):
         try:
-            wget.download(url, filename)
-        except ValueError:
+            # create target directory
+            os.makedirs(os.path.dirname(target), exist_ok=True)
             r = requests.get(url, allow_redirects=True)
-            with open(filename, "wb") as f:
+            with open(target, "wb") as f:
                 f.write(r.content)
+        except Exception as e:
+            logging.error(f"Error while downloading {url}: {e}")
+
+
+def download_files_recursive(maybe_files: Union[dict, list, str], target: str):
+    if isinstance(maybe_files, str):
+        try_download_file(maybe_files, target)
+        return
+    elif isinstance(maybe_files, list):
+        for i, item in maybe_files:
+            download_files_recursive(item, os.path.join(target, str(i)))
+    elif isinstance(maybe_files, dict):
+        for key, value in maybe_files.items():
+            download_files_recursive(value, os.path.join(target, key))
+
+
+def download_output(cid: str, output_dir: str):
+    """Download the output of a pollinate run to a local directory"""
+    output = ipfs_dir_to_json(cid)["output"]
+    download_files_recursive(output, output_dir)
+    return output
