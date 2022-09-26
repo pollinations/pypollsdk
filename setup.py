@@ -8,7 +8,13 @@ setup(
     packages=find_packages(),
     package_data={},
     scripts=[],
-    install_requires=["supabase", "python-dotenv", "pytest", "wget", "httpx>=0.21.3"],
+    install_requires=[
+        "supabase==0.5.8",
+        "python-dotenv==0.20.0",
+        "pytest==7.1.2",
+        "wget==3.2",
+        "httpx==0.21.3",
+    ],
     extras_require={
         "test": ["pytest", "pylint!=2.5.0", "black", "mypy", "flake8", "pytest-cov"],
     },
