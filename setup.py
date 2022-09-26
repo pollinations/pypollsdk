@@ -8,10 +8,7 @@ setup(
     packages=find_packages(),
     package_data={},
     scripts=[],
-    install_requires=[
-        "python-dotenv==0.20.0",
-        "pytest==7.1.2",
-    ],
+    install_requires=["python-dotenv==0.20.0", "pytest==7.1.2", "requests"],
     extras_require={
         "test": ["pytest", "pylint!=2.5.0", "black", "mypy", "flake8", "pytest-cov"],
     },
