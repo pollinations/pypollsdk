@@ -12,7 +12,7 @@ def upload_request_to_ipfs(request):
     # stringify request
     request_string = quote(json.dumps(request))
     image = request["model_image"]
-    cmd = f"node /usr/local/bin/runModel-cli.js {image} {request_string} true"
+    cmd = f"node /usr/local/bin/runModel-cli.js {image} {request_string} 1 true"
     cid = execute_shell(cmd)
     logging.info(f"submitted {cid}")
     return cid
