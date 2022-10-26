@@ -8,7 +8,6 @@ logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=loggin
 
 
 def upload_request_to_ipfs(request):
-
     # stringify request
     request_string = quote(json.dumps(request))
     image = request["model_image"]
@@ -49,4 +48,5 @@ class Model:
 
 
 def execute_shell(cmd):
+    print(cmd)
     return subprocess.check_output(cmd, shell=True).decode("utf-8").split("\n")[0]
