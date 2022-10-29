@@ -13,7 +13,6 @@ def execute_shell(cmd):
 
 def run_model(model_image, request, output_dir=None):
     request_string = quote(json.dumps(request))
-    image = request["model_image"]
     # output_otion = f"-o {output_dir}" if output_dir else ""
     output_option = f"-o /outputs" if output_dir else ""
     cmd = f"node /usr/local/bin/runModel-cli.js -m {model_image} -i {request_string} -p 1 {output_option}"
