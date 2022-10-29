@@ -1,1 +1,1 @@
-from pypollsdk.model import Model  # noqa
+from pypollsdk.model import run_model  # noqa
