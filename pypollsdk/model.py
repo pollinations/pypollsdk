@@ -18,6 +18,9 @@ def run_model(model_image, request, output_dir=None):
     cmd = f"node /usr/local/bin/runModel-cli.js -m {model_image} -i {request_string} -p 1 {output_option}"
     result = execute_shell(cmd)
     # parse json
-    result = json.loads(result)
+    try:
+        result = json.loads(result)
+    except:
+        pass
     logging.info(f"got result", result)
     return result
