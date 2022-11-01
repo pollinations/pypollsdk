@@ -15,7 +15,6 @@ store_url = "https://store.pollinations.ai"
 
 
 def execute_shell(cmd):
-    print(cmd)
     return subprocess.check_output(cmd, shell=True).decode("utf-8").split("\n")[0]
 
 
