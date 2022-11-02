@@ -62,6 +62,7 @@ class RunningCogModel:
         self.environment = environment
 
     def __enter__(self):
+        print(self.output_path)
         global loaded_model
         # Check if the container is already running
         self.pollen_start_time = dt.datetime.now()
@@ -78,6 +79,7 @@ class RunningCogModel:
             return self
         # Kill the running container if it is not the same model
         self.kill_cog_model(logs=False)
+        os.makedirs(self.output_path, exist_ok=True)
         self.pollen_since_container_start = 0
         # Start the container
         if self.has_gpu:
@@ -161,6 +163,9 @@ class RunningCogModel:
         raise UnhealthyCogContainer(f"Model unhealthy: {self.image}")
 
     def _clear_output_folder(self):
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+            return
         for file in os.listdir(self.output_path):
             file_path = os.path.join(self.output_path, file)
             try:
@@ -185,7 +190,7 @@ class RunningCogModel:
             write_folder(self.output_path, "cog_response", json.dumps(response.text))
             write_folder(self.output_path, "success", "false")
         else:
-            self.write_http_response_files(response, self.output_path)
+            self.write_http_response_files(response)
             write_folder(self.output_path, "done", "true")
             logging.info(f"Set done to true in {self.output_path}")
         return response
