@@ -2,14 +2,14 @@
 
 Usage:
 ```
-from pypollsdk import RunningCogModel
+from pypollsdk.local import RunningCogModel
 
 request = {
     "images_zip": "https://pollinations-ci-bucket.s3.amazonaws.com/img.zip"
 }
 
 with RunningCogModel("clip-enc", "data") as model:
-    response = model.predict(request, "data")
+    response = model.predict(request)
     print(response)
 ```
 
@@ -27,7 +27,10 @@ from mimetypes import guess_extension
 
 import docker
 import requests
+from dotenv import load_dotenv
 
+
+load_dotenv()
 docker_client = docker.from_env()
 
 
@@ -96,7 +99,7 @@ class RunningCogModel:
             detach=True,
             name="cogmodel",
             ports={"5000/tcp": 5000},
-            volumes={self.output_path: {"bind": "/outputs", "mode": "rw"}},
+            volumes={"/tmp/pollen-output": {"bind": "/outputs", "mode": "rw"}},
             remove=True,
             auto_remove=True,
             device_requests=gpus,
@@ -184,6 +187,12 @@ class RunningCogModel:
         payload = {"input": inputs}
         response = requests.post("http://localhost:5000/predictions", json=payload)
         logging.info(f"response: {response}")
+        # Move the output files to the output folder
+        for file in os.listdir("/tmp/pollen-output"):
+            shutil.move(
+                os.path.join("/tmp/pollen-output", file),
+                os.path.join(self.output_path, file),
+            )
         write_folder(self.output_path, "time_start", str(int(time.time())))
         write_folder(self.output_path, "done", "true")
         if response.status_code != 200:
