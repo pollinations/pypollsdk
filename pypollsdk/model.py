@@ -51,8 +51,8 @@ def encode_referenced_files(request):
 def run_model(model_image, request, output_dir=None):
     request = encode_referenced_files(request)
     request_string = quote(json.dumps(request))
-    # output_otion = f"-o {output_dir}" if output_dir else ""
-    output_option = "-o /outputs" if output_dir else ""
+    output_option = f"-o {output_dir}" if output_dir else ""
+    # output_option = "-o /outputs" if output_dir else ""
     cmd = f"node /usr/local/bin/runModel-cli.js -m {model_image} -i {request_string} -p 1 {output_option}"
     result = execute_shell(cmd)
     # parse json
