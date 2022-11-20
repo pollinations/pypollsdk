@@ -39,7 +39,7 @@ def encode_referenced_files(request):
         if os.path.exists(request):
             return encode_file(request)
         else:
-            return request
+            raise FileNotFoundError(f"File {request} not found")
     elif isinstance(request, dict):
         return {key: encode_referenced_files(value) for key, value in request.items()}
     elif isinstance(request, list):
