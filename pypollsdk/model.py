@@ -19,9 +19,7 @@ def execute_shell(cmd):
 
 
 def encode_file(local_path):
-    with open(local_path, "rb") as f:
-        encoded_file = base64.b64encode(f.read()).decode("utf-8")
-    return f"data:text/plain;base64,{encoded_file}"
+    return f"@{local_path}"
 
 
 def upload_file(local_path: str) -> str:
