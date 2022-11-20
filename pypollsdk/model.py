@@ -60,5 +60,5 @@ def run_model(model_image, request, output_dir=None):
         result = json.loads(result)
     except:  # noqa: E722
         pass
-    # logging.info(f"got result", result)
+   
     return result
