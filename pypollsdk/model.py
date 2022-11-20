@@ -49,15 +49,15 @@ def encode_referenced_files(request):
 
 
 def run_model(model_image, request, output_dir=None):
-    print("Send to cog model", request)
+    logging.info("Send to cog model", request)
     request = encode_referenced_files(request)
-    print("Encoded files", request)
+    logging.info("Encoded files", request)
     request_string = quote(json.dumps(request))
-    print("Encoded request", request_string)
+    logging.info("Encoded request", request_string)
     # output_otion = f"-o {output_dir}" if output_dir else ""
     output_option = "-o /outputs" if output_dir else ""
     cmd = f"node /usr/local/bin/runModel-cli.js -m {model_image} -i {request_string} -p 1 {output_option}"
-    print("Running", cmd)
+    logging.info("Running", cmd)
     result = execute_shell(cmd)
     # parse json
     try:
